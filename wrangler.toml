@@ -1,0 +1,9 @@
+name = "celerity-networks"
+compatibility_date = "2026-10-14"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "REGISTRATIONS"
+database_name = "celerity-student-registrations"
+database_id = "REPLACE_WITH_YOUR_CLOUDFLARE_D1_DATABASE_ID"
+migrations_dir = "migrations"
