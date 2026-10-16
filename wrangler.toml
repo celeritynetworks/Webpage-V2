@@ -5,5 +5,5 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "REGISTRATIONS"
 database_name = "celerity-student-registrations"
-database_id = "REPLACE_WITH_YOUR_CLOUDFLARE_D1_DATABASE_ID"
+database_id = "bfcb3406-a430-46a7-aeed-8cf5c8f13709"
 migrations_dir = "migrations"
