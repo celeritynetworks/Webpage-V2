@@ -59,23 +59,74 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  if (!(request.headers.get('Content-Type') || '')
-    .toLowerCase().includes('application/json')) {
+  const contentType = (request.headers.get('Content-Type') || '')
+    .split(';', 1)[0]
+    .trim()
+    .toLowerCase();
+
+  if (contentType !== 'application/json') {
     return json({
       error: 'Please submit the registration form using the website.'
     }, 415);
   }
 
-  const length = Number(request.headers.get('Content-Length') || 0);
+  const contentLengthHeader = request.headers.get('Content-Length');
 
-  if (length > 12000) {
-    return json({ error: 'The submitted form is too large.' }, 413);
+  if (contentLengthHeader !== null) {
+    const contentLength = Number(contentLengthHeader);
+
+    if (!Number.isSafeInteger(contentLength) || contentLength < 0) {
+      return json({ error: 'Invalid request size.' }, 400);
+    }
+
+    if (contentLength > 12000) {
+      return json({ error: 'The submitted form is too large.' }, 413);
+    }
   }
 
   let input;
 
   try {
-    input = await request.json();
+    const reader = request.body?.getReader();
+
+    if (!reader) {
+      return json({ error: 'Please check the form and try again.' }, 400);
+    }
+
+    const chunks = [];
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      totalBytes += value.byteLength;
+
+      if (totalBytes > 12000) {
+        try {
+          await reader.cancel();
+        } catch {}
+
+        return json({ error: 'The submitted form is too large.' }, 413);
+      }
+
+      chunks.push(value);
+    }
+
+    const bodyBytes = new Uint8Array(totalBytes);
+    let offset = 0;
+
+    for (const chunk of chunks) {
+      bodyBytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    const bodyText = new TextDecoder('utf-8', {
+      fatal: true
+    }).decode(bodyBytes);
+
+    input = JSON.parse(bodyText);
   } catch {
     return json({ error: 'Please check the form and try again.' }, 400);
   }
@@ -108,35 +159,59 @@ export async function onRequestPost({ request, env }) {
     }, 400);
   }
 
-  // Rate limiting is best-effort. Its failure must not block registration.
+  // Rate limiting is mandatory. Never accept a registration without it.
   try {
-    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const salt = env.RATE_LIMIT_SALT || 'celerity-registration';
+    const salt = env.RATE_LIMIT_SALT;
+
+    if (typeof salt !== 'string' || salt.length < 32) {
+      console.error('Registration rate-limit configuration is invalid.');
+      return json({
+        error: 'Registration service is temporarily unavailable. Please try again later.'
+      }, 503);
+    }
+
+    const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
+
+    if (!ip || ip.length > 100 || /\s/.test(ip)) {
+      console.warn('Registration request has no valid client IP address.');
+      return json({
+        error: 'Registration service is temporarily unavailable. Please try again later.'
+      }, 503);
+    }
+
     const ipHash = await sha256(`${salt}:${ip}`);
     const now = Math.floor(Date.now() / 1000);
 
+    // Remove expired rate-limit records.
     await env.REGISTRATIONS
       .prepare('DELETE FROM registration_rate_limits WHERE created_at < ?')
       .bind(now - 3600)
       .run();
 
-    const count = await env.REGISTRATIONS
-      .prepare('SELECT COUNT(*) AS total FROM registration_rate_limits WHERE ip_hash = ? AND created_at > ?')
-      .bind(ipHash, now - 3600)
-      .first();
+    // Check the limit and record this attempt in one atomic SQL statement.
+    const rateLimitResult = await env.REGISTRATIONS
+      .prepare(`
+        INSERT INTO registration_rate_limits (ip_hash, created_at)
+        SELECT ?, ?
+        WHERE (
+          SELECT COUNT(*)
+          FROM registration_rate_limits
+          WHERE ip_hash = ? AND created_at > ?
+        ) < 5
+      `)
+      .bind(ipHash, now, ipHash, now - 3600)
+      .run();
 
-    if ((count?.total || 0) >= 5) {
+    if ((rateLimitResult?.meta?.changes ?? 0) === 0) {
       return json({
         error: 'Too many attempts. Please wait and try again, or contact us on WhatsApp.'
       }, 429);
     }
-
-    await env.REGISTRATIONS
-      .prepare('INSERT INTO registration_rate_limits (ip_hash, created_at) VALUES (?, ?)')
-      .bind(ipHash, now)
-      .run();
   } catch (error) {
-    console.warn('Rate limiting unavailable; continuing registration.', error);
+    console.error('Registration rate limiting failed:', error);
+    return json({
+      error: 'Registration service is temporarily unavailable. Please try again later.'
+    }, 503);
   }
 
   const registrationId = crypto.randomUUID();
