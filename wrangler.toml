@@ -28,15 +28,16 @@ ADMIN_EMAIL = "celeritynetworksltd@gmail.com"
 CLOUDFLARE_ACCESS_TEAM_DOMAIN = "super-scene-423d.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUD = "fcf8c0760e937fb803f6ba21d62030b0a499a959c374e07d556718bb32c26f11"
 ADMIN_EMAIL = "celeritynetworksltd@gmail.com"
+
 [[env.preview.d1_databases]]
 binding = "REGISTRATIONS"
-database_name = "celerity-student-registrations"
-database_id = "bfcb3406-a430-46a7-aeed-8cf5f8c13709"
+database_name = "celerity-preview-registrations"
+database_id = "679ed2eb-084f-4fce-8bde-308af540e8de"
 migrations_dir = "migrations"
 
 [[env.preview.r2_buckets]]
 binding = "DATASETS_BUCKET"
-bucket_name = "celerity-datasets"
+bucket_name = "celerity-preview-datasets"
 [[env.production.d1_databases]]
 binding = "REGISTRATIONS"
 database_name = "celerity-student-registrations"
