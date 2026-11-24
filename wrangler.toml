@@ -26,7 +26,7 @@ ADMIN_EMAIL = "celeritynetworksltd@gmail.com"
 
 [env.preview.vars]
 CLOUDFLARE_ACCESS_TEAM_DOMAIN = "super-scene-423d.cloudflareaccess.com"
-CLOUDFLARE_ACCESS_AUD = "fcf8c0760e937fb803f6ba21d62030b0a499a959c374e07d556718bb32c26f11"
+CLOUDFLARE_ACCESS_AUD = "680de419c9ef9dc21c2ea45efd41248d211e80e517f502076f3d9cf0275587d2"
 ADMIN_EMAIL = "celeritynetworksltd@gmail.com"
 
 [[env.preview.d1_databases]]
