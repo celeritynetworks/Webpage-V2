@@ -279,3 +279,49 @@
 .dataset-form-fieldset:disabled {
   opacity: .78;
 }
+
+.dataset-record-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.dataset-record-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dataset-delete-button,
+.competition-delete-button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid #e2bcbc;
+  border-radius: 7px;
+  background: #fff7f7;
+  color: #9d3434;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dataset-delete-button:hover:not(:disabled),
+.competition-delete-button:hover:not(:disabled) {
+  background: #fdeaea;
+}
+
+.dataset-delete-button:disabled,
+.competition-delete-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .dataset-record-top {
+    align-items: flex-start;
+  }
+}

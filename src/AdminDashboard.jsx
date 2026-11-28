@@ -420,7 +420,7 @@ export default function AdminDashboard({ preview = false }) {
                   </span>
                   <span>{submission.competition_title || 'Competition'}</span>
                   <span className="admin-submission-meta">
-                    Score: {submission.score ?? 'Not scored'} Ã‚Â· Reviews: {submission.review_count ?? 0}
+                    Score: {submission.score ?? 'Not scored'} | Reviews: {submission.review_count ?? 0}
                   </span>
                   <span className="admin-submission-meta">
                     Submitted: {formatDate(submission.submitted_at)}
@@ -475,7 +475,7 @@ export default function AdminDashboard({ preview = false }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Inspect GitHub repository Ã¢â€ â€”
+                  Inspect GitHub repository
                 </a>
 
                 <p className="admin-declaration-note">
@@ -490,7 +490,7 @@ export default function AdminDashboard({ preview = false }) {
 
                 <form className="admin-review-form" onSubmit={saveReview}>
                   <label>
-                    Score (0Ã¢â‚¬â€œ100)
+                    Score (0-100)
                     <input
                       type="number"
                       min="0"
@@ -570,10 +570,10 @@ export default function AdminDashboard({ preview = false }) {
                           <strong>{review.reviewer_email}</strong>
                           <time>{formatDate(review.created_at)}</time>
                         </div>
-                        <p>Score: {review.previous_score ?? 'None'} Ã¢â€ â€™ {review.new_score ?? 'None'}</p>
+                        <p>Score: {review.previous_score ?? 'None'} to {review.new_score ?? 'None'}</p>
                         <p>
                           Status: {STATUS_LABELS[review.previous_status] || review.previous_status || 'None'}
-                          {' Ã¢â€ â€™ '}
+                          {' -> '}
                           {STATUS_LABELS[review.new_status] || review.new_status || 'None'}
                         </p>
                         <p><b>Reason:</b> {review.reason}</p>

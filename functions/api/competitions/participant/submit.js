@@ -336,75 +336,10 @@ export async function onRequestPost({ request, env }) {
       }, 409);
     }
 
-    // Verify the repository directly with GitHub.
-    let githubResponse;
-
-    try {
-      githubResponse = await fetch(
-        `https://api.github.com/repos/${repository.owner}/${repository.repository}`,
-        {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-            'User-Agent': 'CelerityNetworks-CompetitionSubmission'
-          }
-        }
-      );
-    } catch {
-      return json({
-        error: 'We could not verify the GitHub repository. Please try again.'
-      }, 503);
-    }
-
-    if (githubResponse.status === 404) {
-      return json({
-        error: 'The repository was not found or is private. Make it public and try again.'
-      }, 400);
-    }
-
-    if (
-      githubResponse.status === 403 ||
-      githubResponse.status === 429
-    ) {
-      return json({
-        error: 'GitHub verification is temporarily unavailable. Please try again later.'
-      }, 503);
-    }
-
-    if (!githubResponse.ok) {
-      return json({
-        error: 'GitHub could not verify this repository. Please try again later.'
-      }, 503);
-    }
-
-    const githubData = await githubResponse.json();
-
-    if (
-      githubData.private !== false ||
-      !githubData.owner?.login ||
-      !githubData.name
-    ) {
-      return json({
-        error: 'Only existing public GitHub repositories can be submitted.'
-      }, 400);
-    }
-
-    const verifiedOwner = githubData.owner.login;
-    const verifiedRepository = githubData.name;
-
-    if (
-      !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(verifiedOwner) ||
-      !/^[A-Za-z0-9._-]{1,100}$/.test(verifiedRepository)
-    ) {
-      return json({
-        error: 'GitHub returned an invalid repository identity.'
-      }, 400);
-    }
-
-    const verifiedUrl =
-      `https://github.com/${verifiedOwner}/${verifiedRepository}`;
-
+    // Use the validated repository URL without contacting the GitHub API.
+    const submittedUrl = repository.url;
+    const submittedOwner = repository.owner;
+    const submittedRepository = repository.repository;
     // Recheck authentication and deadline immediately before saving.
     const current = await getAuthenticatedParticipant(
       db,
@@ -448,7 +383,13 @@ export async function onRequestPost({ request, env }) {
         declaration_version,
         declarations_accepted_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?, ?, ?, ?)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?, ?, ?, ?
+      WHERE EXISTS (
+        SELECT 1
+        FROM competitions
+        WHERE id = ?
+          AND status IN ('upcoming', 'active')
+      )
       ON CONFLICT (competition_id, participant_id) DO NOTHING
     `).bind(
       submissionId,
@@ -456,19 +397,20 @@ export async function onRequestPost({ request, env }) {
       current.id,
       current.full_name,
       current.email,
-      verifiedUrl,
-      verifiedOwner,
-      verifiedRepository,
+      submittedUrl,
+      submittedOwner,
+      submittedRepository,
       finalNow,
       1,
       1,
       DECLARATION_VERSION,
-      finalNow
+      finalNow,
+      current.competition_id
     ).run();
 
     if (result.meta?.changes !== 1) {
       return json({
-        error: 'A project submission already exists for your account.'
+        error: 'The competition may have closed or a project submission already exists for your account.'
       }, 409);
     }
 
@@ -477,7 +419,7 @@ export async function onRequestPost({ request, env }) {
       message: 'Your GitHub project has been submitted successfully.',
       project_submission: {
         id: submissionId,
-        repository_url: verifiedUrl,
+        repository_url: submittedUrl,
         status: 'submitted',
         submitted_at: finalNow
       }

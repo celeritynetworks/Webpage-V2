@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
@@ -282,12 +282,27 @@ test("rejects an end date that is not after the start date", async () => {
 test("rejects an invalid competition status", async () => {
   const { response, calls } = await callEndpoint({
     form: createForm({
-      status: "published"
+      status: "not-a-publication-status"
     })
   });
 
   assert.equal(response.status, 400);
   assert.equal(calls.some(call => call.type === "put"), false);
+});
+
+
+
+test("publishes an immediately starting competition as active", async () => {
+  const now = Date.now();
+  const starts = new Date(now - 60 * 60 * 1000).toISOString();
+  const ends = new Date(now + 24 * 60 * 60 * 1000).toISOString();
+  const { response, calls } = await callEndpoint({
+    form: createForm({ status: "published", starts_at: starts, ends_at: ends })
+  });
+  assert.equal(response.status, 201);
+  const insert = calls.find(call => call.type === "run" && call.sql.includes("INSERT INTO competitions"));
+  assert.ok(insert);
+  assert.equal(insert.values[16], "active");
 });
 
 test("rejects file contents that do not match the extension", async () => {

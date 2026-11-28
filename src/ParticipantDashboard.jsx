@@ -3,7 +3,7 @@ import {
   UserRound, Mail, Phone, Building2, ShieldCheck,
   Trophy, CalendarDays, Database, FileCheck2,
   Clock3, LogOut, RefreshCw, ArrowUpRight,
-  AlertCircle, CheckCircle2, Github, ExternalLink, Send
+  AlertCircle, CheckCircle2, Github, ExternalLink, Send, Download
 } from 'lucide-react';
 import './participant-dashboard.css';
 
@@ -404,6 +404,19 @@ export default function ParticipantDashboard() {
                         <h4>Competition instructions</h4>
                         <p>{competition.instructions}</p>
                       </div>
+                    )}
+
+                    {competition.dataset_file_name ? (
+                      <a
+                        className="participant-dataset-download"
+                        href={`/api/competitions/${encodeURIComponent(competition.slug)}/dataset`}
+                      >
+                        <Download size={17} /> Download challenge dataset
+                      </a>
+                    ) : (
+                      <p className="participant-dataset-pending">
+                        The challenge dataset has not been uploaded yet.
+                      </p>
                     )}
 
                     <a

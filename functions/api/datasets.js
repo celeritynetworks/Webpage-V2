@@ -1,4 +1,4 @@
-﻿function json(data, status = 200) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -75,12 +75,14 @@ export async function onRequestGet({ request, env }) {
         d.file_name,
         d.file_format,
         d.file_size_bytes,
+        d.thumbnail_key,
         d.record_count,
         d.column_count,
         d.learning_objectives,
         d.tags,
         d.download_count,
         d.published_at,
+        d.updated_at,
         i.name AS industry_name,
         i.slug AS industry_slug
       FROM datasets d
@@ -90,11 +92,15 @@ export async function onRequestGet({ request, env }) {
       LIMIT ? OFFSET ?
     `).bind(...bindings, limit, offset).all();
 
-    const datasets = (result.results || []).map(item => ({
-      ...item,
-      learning_objectives: parseJson(item.learning_objectives),
-      tags: parseJson(item.tags)
-    }));
+    const datasets = (result.results || []).map(item => {
+      const { thumbnail_key, ...publicItem } = item;
+      return {
+        ...publicItem,
+        learning_objectives: parseJson(item.learning_objectives),
+        tags: parseJson(item.tags),
+        thumbnail_url: thumbnail_key ? `/api/datasets/${encodeURIComponent(item.slug)}/thumbnail?v=${Number(item.updated_at || item.published_at || 0)}` : null
+      };
+    });
 
     const total = countResult?.total || 0;
 

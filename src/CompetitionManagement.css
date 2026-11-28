@@ -297,3 +297,28 @@
     flex-direction: column;
   }
 }
+
+.competition-record-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.competition-record-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.competition-record-title h4 {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .competition-record-top {
+    align-items: flex-start;
+  }
+}

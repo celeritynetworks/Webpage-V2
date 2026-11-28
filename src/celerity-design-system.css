@@ -1,0 +1,47 @@
+/* Shared Celerity visual system for the homepage, Dataset Hub and Competitions. */
+:root{--cn-ink:#102b49;--cn-blue:#176fc1;--cn-blue-deep:#0d477e;--cn-muted:#60758d;--cn-line:#dce7f2;--cn-surface:#fff;--cn-page:#f4f8fd;--cn-soft:#eaf3fc;--cn-radius:18px;--cn-shadow:0 16px 42px rgba(18,54,91,.08)}
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{color:var(--cn-ink);background:var(--cn-page);-webkit-font-smoothing:antialiased}
+.header,.dataset-hub-header,.competition-site-header,.competition-detail-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96)!important;border-bottom:1px solid var(--cn-line)!important;box-shadow:0 4px 20px rgba(17,52,88,.045);backdrop-filter:blur(14px)}
+.nav-links>a:not(.nav-cta){background:transparent!important;border:0!important;box-shadow:none!important;color:#38536f!important;padding:10px 8px!important;border-radius:0!important;font-size:13px!important;font-weight:700!important;position:relative}
+.nav-links>a:not(.nav-cta):after,.celerity-page-nav a:after,.competition-site-header nav a:not(.competition-site-nav-cta):after,.competition-detail-header nav a:not(.competition-detail-nav-cta):after{content:"";position:absolute;left:8px;right:8px;bottom:3px;height:2px;border-radius:2px;background:var(--cn-blue);transform:scaleX(0);transform-origin:left;transition:transform .2s ease}
+.nav-links>a:not(.nav-cta):hover:after,.celerity-page-nav a:hover:after,.competition-site-header nav a:hover:after,.competition-detail-header nav a:hover:after{transform:scaleX(1)}
+.nav-cta,.competition-site-nav-cta,.competition-detail-nav-cta{border:0!important;border-radius:999px!important;background:linear-gradient(135deg,#278be4,#0d5ba7)!important;box-shadow:0 8px 20px rgba(23,111,193,.2)!important;padding:12px 19px!important}
+.dataset-hub-header,.competition-site-header,.competition-detail-header{min-height:82px;padding:12px clamp(18px,5.5vw,82px)!important;display:flex;align-items:center;justify-content:space-between;gap:28px}
+.dataset-hub-brand img,.competition-site-brand img,.competition-detail-brand img{width:76px!important;height:58px!important;object-fit:contain}
+.dataset-hub-brand strong,.competition-site-brand strong,.competition-detail-brand strong{font-size:16px!important;color:var(--cn-ink)!important;letter-spacing:-.02em}
+.dataset-hub-brand small,.competition-site-brand small,.competition-detail-brand small{font-size:9px!important;letter-spacing:1.5px!important;font-weight:800;color:#7188a1!important}
+.celerity-page-nav,.competition-site-header nav,.competition-detail-header nav{display:flex;align-items:center;gap:clamp(12px,2.1vw,30px)!important}
+.celerity-page-nav a,.competition-site-header nav a,.competition-detail-header nav a{position:relative;color:#405b77!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;padding:12px 8px!important}
+.celerity-page-nav a[aria-current=page],.competition-site-header nav a[aria-current=page]{color:var(--cn-blue)!important}
+.dataset-page{background:var(--cn-page)!important}
+.dataset-hero{background:radial-gradient(circle at 82% 16%,rgba(67,151,224,.16),transparent 30%),linear-gradient(120deg,#e7f2fd,#f7faff 58%,#eaf4ff)!important;padding:82px 24px 72px!important}
+.dataset-hero h1,.competition-gallery-hero h1{letter-spacing:-.055em!important;font-weight:850!important}
+.dataset-hero p,.competition-gallery-hero p{font-size:16px!important;line-height:1.85!important}
+.dataset-content{padding-top:60px!important;padding-bottom:70px!important}
+.dataset-filters,.dataset-card,.dataset-message,.dataset-empty{border-radius:var(--cn-radius)!important;box-shadow:var(--cn-shadow)!important;border-color:#e1eaf3!important}
+.dataset-card{overflow:hidden;transition:transform .22s ease,box-shadow .22s ease!important}
+.dataset-card:hover{transform:translateY(-5px)!important;box-shadow:0 22px 48px rgba(18,54,91,.13)!important}
+.dataset-card-image{height:190px!important}
+.dataset-card-body{padding:23px!important}
+.dataset-card h3{font-size:20px!important;letter-spacing:-.025em}
+.dataset-description{font-size:13px!important;line-height:1.8!important}
+.dataset-download-soon{border-radius:999px!important;padding:11px 17px!important}
+.competitions-page,.competition-detail-page{background:var(--cn-page)!important}
+.competition-gallery-hero{background:radial-gradient(circle at 83% 18%,rgba(100,184,246,.24),transparent 26%),linear-gradient(118deg,#0b2b50 0%,#104b80 55%,#087bc3 100%)!important;padding-top:84px!important;padding-bottom:78px!important}
+.competition-gallery-hero-inner{max-width:720px!important}
+.competition-gallery-hero h1{font-size:clamp(40px,5.2vw,66px)!important;line-height:1.04!important}
+.competition-gallery-hero-visual,.competition-gallery-visual{border-radius:24px!important;overflow:hidden;box-shadow:0 24px 65px rgba(0,0,0,.2)}
+.competition-gallery-content,.competition-gallery-section,.competition-detail-main{max-width:1240px;margin-left:auto;margin-right:auto}
+.competition-gallery-card,.competition-card,.competition-gallery-results-card{border-radius:18px!important;box-shadow:var(--cn-shadow)!important}
+.competition-detail-header nav a[aria-current=page]{color:var(--cn-blue)!important}
+.section-heading h2,.about-copy h2,.training-intro h2{letter-spacing:-.055em}
+.service-card,.course-row,.about-art-inner,.contact-box{border-radius:18px}
+.service-card{border:1px solid #e1eaf3;box-shadow:0 10px 30px rgba(18,54,91,.045);transition:transform .2s ease,box-shadow .2s ease}
+.service-card:hover{transform:translateY(-4px);box-shadow:var(--cn-shadow)}
+.about-section{background:#f5f9fe}
+.about-copy>p{font-size:14px;line-height:1.95;color:#526b84}
+.mission-vision>div{padding:18px;border:1px solid #dce8f4;border-radius:14px;background:#fff}
+.contact-box{box-shadow:0 18px 48px rgba(18,54,91,.08)}
+@media(max-width:850px){.dataset-hub-header,.competition-site-header,.competition-detail-header{min-height:72px;flex-wrap:wrap;padding:9px 18px!important}.celerity-page-nav,.competition-site-header nav,.competition-detail-header nav{width:100%;justify-content:space-between;gap:4px!important;overflow-x:auto}.celerity-page-nav a,.competition-site-header nav a,.competition-detail-header nav a{white-space:nowrap;font-size:11px!important;padding:9px 5px!important}.dataset-hero{padding:58px 20px 52px!important}}
+@media(max-width:560px){.dataset-hub-header,.competition-site-header,.competition-detail-header{gap:6px}.dataset-hub-brand img,.competition-site-brand img,.competition-detail-brand img{width:58px!important;height:46px!important}.dataset-hub-brand strong,.competition-site-brand strong,.competition-detail-brand strong{font-size:13px!important}.dataset-hub-brand small,.competition-site-brand small,.competition-detail-brand small{font-size:7px!important;letter-spacing:1px!important}.celerity-page-nav a,.competition-site-header nav a,.competition-detail-header nav a{font-size:10px!important}.dataset-hero h1{font-size:36px!important}.competition-gallery-hero{grid-template-columns:1fr!important;padding:55px 20px!important}.competition-gallery-hero h1{font-size:40px!important}}

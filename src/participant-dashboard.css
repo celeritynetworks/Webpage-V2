@@ -368,6 +368,35 @@
   white-space: pre-wrap;
 }
 
+.participant-dataset-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px solid #246fb4;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #246fb4;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.participant-dataset-download:hover {
+  border-color: #185b99;
+  background: #185b99;
+}
+
+.participant-dataset-pending {
+  margin: 18px 0 0;
+  color: #718198;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .participant-text-link {
   display: inline-flex;
   align-items: center;

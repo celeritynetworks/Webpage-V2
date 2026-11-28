@@ -31,9 +31,11 @@ export default function DatasetManagement({ preview = false }) {
   const [datasets, setDatasets] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [uploading, setUploading] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState('');
   const [error, setError] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [slugTouched, setSlugTouched] = React.useState(false);
+  const [editingId, setEditingId] = React.useState('');
 
   const [form, setForm] = React.useState({
     industry_id: '',
@@ -46,7 +48,8 @@ export default function DatasetManagement({ preview = false }) {
     learning_objectives: '',
     tags: '',
     status: 'draft',
-    file: null
+    file: null,
+    thumbnail: null
   });
 
   const updateForm = (field, value) => {
@@ -103,6 +106,51 @@ export default function DatasetManagement({ preview = false }) {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleDelete = async dataset => {
+    if (preview || deletingId) return;
+
+    const confirmed = window.confirm(
+      `Permanently delete the dataset "${dataset.title}" and its stored file? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const reason = window.prompt(
+      'Enter the reason for deleting this dataset (at least 10 characters):'
+    );
+    if (reason === null) return;
+    if (reason.trim().length < 10 || reason.trim().length > 1000) {
+      setError('The audit reason must contain between 10 and 1,000 characters.');
+      return;
+    }
+
+    setDeletingId(dataset.id);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/admin/datasets', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: dataset.id,
+          confirmName: dataset.title,
+          reason: reason.trim()
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Dataset deletion failed.');
+      }
+      setMessage(result.message || 'Dataset deleted successfully.');
+      await loadData();
+    } catch (err) {
+      setError(err.message || 'Dataset deletion failed. Please refresh and try again.');
+    } finally {
+      setDeletingId('');
+    }
+  };
 
   const handleTitleChange = value => {
     setForm(current => ({
@@ -161,7 +209,7 @@ export default function DatasetManagement({ preview = false }) {
       return;
     }
 
-    if (!form.file) {
+    if (!form.file && !editingId) {
       setError('Please select a dataset file to upload.');
       return;
     }
@@ -177,13 +225,15 @@ export default function DatasetManagement({ preview = false }) {
     payload.append('learning_objectives', JSON.stringify(objectives));
     payload.append('tags', JSON.stringify(tags));
     payload.append('status', form.status);
-    payload.append('file', form.file);
+    if (editingId) payload.append('id', editingId);
+    if (form.file) payload.append('file', form.file);
+    if (form.thumbnail) payload.append('thumbnail', form.thumbnail);
 
     setUploading(true);
 
     try {
       const response = await fetch('/api/admin/datasets', {
-        method: 'POST',
+        method: editingId ? 'PUT' : 'POST',
         credentials: 'same-origin',
         body: payload
       });
@@ -194,8 +244,9 @@ export default function DatasetManagement({ preview = false }) {
         throw new Error(result.message || 'Dataset upload failed.');
       }
 
-      setMessage(result.message || 'Dataset uploaded successfully.');
+      setMessage(result.message || 'Dataset saved successfully.');
       setSlugTouched(false);
+      setEditingId('');
       setForm({
         industry_id: form.industry_id,
         title: '',
@@ -207,11 +258,14 @@ export default function DatasetManagement({ preview = false }) {
         learning_objectives: '',
         tags: '',
         status: 'draft',
-        file: null
+        file: null,
+        thumbnail: null
       });
 
       const fileInput = document.getElementById('dataset-upload-file');
+      const imageInput = document.getElementById('dataset-thumbnail-file');
       if (fileInput) fileInput.value = '';
+      if (imageInput) imageInput.value = '';
 
       await loadData();
     } catch (err) {
@@ -219,6 +273,32 @@ export default function DatasetManagement({ preview = false }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const editDataset = dataset => {
+    setEditingId(dataset.id);
+    setSlugTouched(true);
+    setError('');
+    setMessage(`Editing: ${dataset.title}`);
+    setForm({
+      industry_id: dataset.industry_id || '', title: dataset.title || '', slug: dataset.slug || '',
+      description: dataset.description || '', difficulty: dataset.difficulty || 'Beginner',
+      record_count: String(dataset.record_count ?? ''), column_count: String(dataset.column_count ?? ''),
+      learning_objectives: Array.isArray(dataset.learning_objectives) ? dataset.learning_objectives.join('\n') : '',
+      tags: Array.isArray(dataset.tags) ? dataset.tags.join(', ') : '', status: dataset.status === 'published' ? 'published' : 'draft',
+      file: null, thumbnail: null
+    });
+    document.getElementById('dataset-upload-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId('');
+    setSlugTouched(false);
+    setForm(current => ({ ...current, title: '', slug: '', description: '', difficulty: 'Beginner', record_count: '', column_count: '', learning_objectives: '', tags: '', status: 'draft', file: null, thumbnail: null }));
+    const fileInput = document.getElementById('dataset-upload-file');
+    const imageInput = document.getElementById('dataset-thumbnail-file');
+    if (fileInput) fileInput.value = '';
+    if (imageInput) imageInput.value = '';
   };
 
   return (
@@ -235,9 +315,9 @@ export default function DatasetManagement({ preview = false }) {
       {message && <div className="dataset-alert dataset-alert-success" role="status">{message}</div>}
 
       <div className="dataset-admin-grid">
-        <form className="dataset-upload-panel" onSubmit={handleSubmit}>
+        <form id="dataset-upload-panel" className="dataset-upload-panel" onSubmit={handleSubmit}>
           <fieldset disabled={preview || uploading} className="dataset-form-fieldset">
-          <h3>Upload a new dataset</h3>
+          <h3>{editingId ? 'Edit dataset' : 'Upload a new dataset'}</h3>
           <p className="dataset-form-intro">
             Complete the dataset details and select the file package to upload.
           </p>
@@ -360,13 +440,17 @@ export default function DatasetManagement({ preview = false }) {
           />
           <small>Separate tags with commas.</small>
 
+          <label htmlFor="dataset-thumbnail-file">Dataset thumbnail image</label>
+          <input id="dataset-thumbnail-file" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => updateForm('thumbnail', event.target.files?.[0] || null)} />
+          <small>Optional. PNG, JPG or WEBP, maximum 5 MB. A thumbnail makes the dataset easier to recognise.</small>
+
           <label htmlFor="dataset-upload-file">Dataset file package</label>
           <input
             id="dataset-upload-file"
             type="file"
             accept=".csv,.xlsx,.xls,.zip,.json,.parquet"
             onChange={handleFileChange}
-            required
+            required={!editingId}
           />
           <small>
             Maximum size: 50 MB. ZIP is recommended when including a data dictionary,
@@ -385,8 +469,9 @@ export default function DatasetManagement({ preview = false }) {
             type="submit"
             disabled={uploading || !industries.length}
           >
-            {uploading ? 'Uploading dataset...' : form.status === 'published' ? 'Upload and publish dataset' : 'Upload and save draft'}
+            {uploading ? 'Saving dataset...' : editingId ? (form.status === 'published' ? 'Update and publish dataset' : 'Update draft') : form.status === 'published' ? 'Upload and publish dataset' : 'Upload and save draft'}
           </button>
+          {editingId && <button type="button" className="dataset-refresh-button" onClick={cancelEdit}>Cancel editing</button>}
           </fieldset>
         </form>
 
@@ -409,12 +494,24 @@ export default function DatasetManagement({ preview = false }) {
               {datasets.map(dataset => (
                 <article className="dataset-record-card" key={dataset.id}>
                   <div className="dataset-record-top">
-                    <h4>{dataset.title}</h4>
-                    <span className={`dataset-status dataset-status-${dataset.status}`}>
-                      {dataset.status}
-                    </span>
+                    <div className="dataset-record-title">
+                      <h4>{dataset.title}</h4>
+                      <span className={`dataset-status dataset-status-${dataset.status}`}>
+                        {dataset.status}
+                      </span>
+                    </div>
+                    <button type="button" className="dataset-refresh-button" onClick={() => editDataset(dataset)} disabled={preview || Boolean(deletingId)}>Edit</button>
+                    <button
+                      type="button"
+                      className="dataset-delete-button"
+                      onClick={() => handleDelete(dataset)}
+                      disabled={preview || Boolean(deletingId)}
+                    >
+                      {deletingId === dataset.id ? 'Deleting...' : 'Delete dataset'}
+                    </button>
                   </div>
                   <p className="dataset-record-description">{dataset.description}</p>
+                  {dataset.thumbnail_key && <small>Thumbnail image uploaded</small>}
                   <div className="dataset-record-meta">
                     <span><strong>Industry:</strong> {dataset.industry_name}</span>
                     <span><strong>Level:</strong> {dataset.difficulty}</span>

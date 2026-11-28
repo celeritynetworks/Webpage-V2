@@ -1,4 +1,6 @@
+import { adminJson, validAdminOrigin, readDeletionRequest, writeResourceAudit } from "./_resource-deletion.js";
 import { parseMultipartForm, validateUploadedFile } from "./_upload.js";
+import { storeThumbnail } from "./_image-upload.js";
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -88,6 +90,7 @@ export async function onRequestGet({ env, data }) {
         d.file_name,
         d.file_format,
         d.file_size_bytes,
+        d.thumbnail_key,
         d.record_count,
         d.column_count,
         d.learning_objectives,
@@ -150,7 +153,7 @@ export async function onRequestPost({ request, env, data }) {
 
   const uploadResult = await parseMultipartForm(
     request,
-    MAX_FILE_SIZE + 1024 * 1024
+    MAX_FILE_SIZE + 6 * 1024 * 1024
   );
 
   if (uploadResult.error === "too_large") {
@@ -167,6 +170,7 @@ export async function onRequestPost({ request, env, data }) {
 
   const form = uploadResult.form;
 
+  const editingId = cleanText(form.get("id"), 100);
   const industryId = cleanText(form.get("industry_id"), 80);
   const title = cleanText(form.get("title"), 150);
   const slug = cleanText(form.get("slug"), 140).toLowerCase();
@@ -178,6 +182,14 @@ export async function onRequestPost({ request, env, data }) {
   const recordCount = Number(form.get("record_count"));
   const columnCount = Number(form.get("column_count"));
   const file = form.get("file");
+  const thumbnail = form.get("thumbnail");
+  let existing = null;
+  if (editingId) {
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(editingId)) return json({ success: false, message: "Invalid dataset record." }, 400);
+    existing = await env.REGISTRATIONS.prepare(`SELECT id, title, file_key, file_name, file_format, file_size_bytes, thumbnail_key, published_at FROM datasets WHERE id = ? LIMIT 1`).bind(editingId).first();
+    if (!existing) return json({ success: false, message: "Dataset draft not found. Refresh the records and try again." }, 404);
+    if (existing.status === "archived") return json({ success: false, message: "Archived datasets cannot be edited." }, 409);
+  }
 
   if (!industryId || !title || !description || !validSlug(slug)) {
     return json({ success: false, message: "Complete the required dataset details and use a valid URL slug." }, 400);
@@ -204,23 +216,24 @@ export async function onRequestPost({ request, env, data }) {
     return json({ success: false, message: "Record count and column count must be non-negative whole numbers." }, 400);
   }
 
-  if (!file || typeof file.arrayBuffer !== "function" || file.size <= 0) {
+  const hasFile = Boolean(file && typeof file.arrayBuffer === "function" && file.size > 0);
+  if (!hasFile && !existing) {
     return json({ success: false, message: "Select a dataset package to upload." }, 400);
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  if (hasFile && file.size > MAX_FILE_SIZE) {
     return json({ success: false, message: "The maximum upload size is 50 MB." }, 413);
   }
 
-  const originalName = typeof file.name === "string" ? file.name : "";
-  const extension = originalName.split(".").pop()?.toLowerCase();
+  const originalName = hasFile ? (typeof file.name === "string" ? file.name : "") : existing.file_name;
+  const extension = hasFile ? originalName.split(".").pop()?.toLowerCase() : existing.file_format;
 
-  if (!ALLOWED_FORMATS.includes(extension)) {
+  if (hasFile && !ALLOWED_FORMATS.includes(extension)) {
     return json({ success: false, message: "Allowed file formats: CSV, XLSX, XLS, ZIP, JSON and Parquet." }, 400);
   }
 
-  const fileBytes = await file.arrayBuffer();
-  const fileValidation = validateUploadedFile(fileBytes, extension);
+  const fileBytes = hasFile ? await file.arrayBuffer() : null;
+  const fileValidation = hasFile ? validateUploadedFile(fileBytes, extension) : { valid: true };
 
   if (!fileValidation.valid) {
     return json({
@@ -248,18 +261,20 @@ export async function onRequestPost({ request, env, data }) {
     return json({ success: false, message: "Select a valid industry." }, 400);
   }
 
-  const id = crypto.randomUUID();
-  const storedName = safeFileName(originalName);
+  const id = editingId || crypto.randomUUID();
+  const storedName = hasFile ? safeFileName(originalName) : existing.file_name;
 
   if (!storedName || !storedName.includes(".")) {
     return json({ success: false, message: "Invalid upload filename." }, 400);
   }
 
-  const fileKey = `datasets/${id}/${storedName}`;
+  const fileKey = hasFile ? `datasets/${id}/${storedName}` : existing.file_key;
   const now = Math.floor(Date.now() / 1000);
+  let thumbnailKey = existing?.thumbnail_key || null;
+  let uploadedThumbnailKey = null;
 
   try {
-    await env.DATASETS_BUCKET.put(fileKey, fileBytes, {
+    if (hasFile) await env.DATASETS_BUCKET.put(fileKey, fileBytes, {
       httpMetadata: {
         contentType: "application/octet-stream"
       },
@@ -269,69 +284,60 @@ export async function onRequestPost({ request, env, data }) {
       }
     });
 
-    await env.REGISTRATIONS.prepare(`
-      INSERT INTO datasets (
-        id,
-        industry_id,
-        title,
-        slug,
-        description,
-        difficulty,
-        file_key,
-        file_name,
-        file_format,
-        file_size_bytes,
-        record_count,
-        column_count,
-        learning_objectives,
-        tags,
-        status,
-        created_at,
-        updated_at,
-        published_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      id,
-      industryId,
-      title,
-      slug,
-      description,
-      difficulty,
-      fileKey,
-      storedName,
-      extension,
-      file.size,
-      recordCount,
-      columnCount,
-      JSON.stringify(objectives),
-      JSON.stringify(tags),
-      status,
-      now,
-      now,
-      status === "published" ? now : null
-    ).run();
+    if (thumbnail && typeof thumbnail.arrayBuffer === "function" && thumbnail.size > 0) {
+      uploadedThumbnailKey = await storeThumbnail({ file: thumbnail, bucket: env.DATASETS_BUCKET, resourceType: "datasets", resourceId: id, adminEmail: data.admin.email });
+      thumbnailKey = uploadedThumbnailKey;
+    }
+
+    if (existing) {
+      await env.REGISTRATIONS.prepare(`
+        UPDATE datasets SET industry_id = ?, title = ?, slug = ?, description = ?, difficulty = ?,
+          file_key = ?, file_name = ?, file_format = ?, file_size_bytes = ?, record_count = ?,
+          column_count = ?, learning_objectives = ?, tags = ?, status = ?, thumbnail_key = ?,
+          updated_at = ?, published_at = CASE WHEN ? = 'published' THEN COALESCE(published_at, ?) ELSE NULL END
+        WHERE id = ?
+      `).bind(industryId, title, slug, description, difficulty, fileKey, storedName, extension,
+        hasFile ? file.size : existing.file_size_bytes, recordCount, columnCount,
+        JSON.stringify(objectives), JSON.stringify(tags), status, thumbnailKey, now, status, now, id).run();
+      if (hasFile && existing.file_key && existing.file_key !== fileKey) {
+        try { await env.DATASETS_BUCKET.delete(existing.file_key); } catch (cleanupError) { console.error("Old dataset file cleanup failed:", cleanupError); }
+      }
+      if (uploadedThumbnailKey && existing.thumbnail_key && existing.thumbnail_key !== uploadedThumbnailKey) {
+        try { await env.DATASETS_BUCKET.delete(existing.thumbnail_key); } catch (cleanupError) { console.error("Old dataset thumbnail cleanup failed:", cleanupError); }
+      }
+    } else {
+      await env.REGISTRATIONS.prepare(`
+        INSERT INTO datasets (
+          id, industry_id, title, slug, description, difficulty, file_key, file_name, file_format,
+          file_size_bytes, record_count, column_count, learning_objectives, tags, status,
+          thumbnail_key, created_at, updated_at, published_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(id, industryId, title, slug, description, difficulty, fileKey, storedName, extension,
+        file.size, recordCount, columnCount, JSON.stringify(objectives), JSON.stringify(tags),
+        status, thumbnailKey, now, now, status === "published" ? now : null).run();
+    }
 
     return json({
       success: true,
-      message: status === "published"
-        ? "Dataset uploaded and published."
-        : "Dataset uploaded and saved as a draft.",
+      message: existing ? (status === "published" ? "Dataset updated and published." : "Dataset draft updated.") : (status === "published" ? "Dataset uploaded and published." : "Dataset uploaded and saved as a draft."),
       dataset: {
         id,
         title,
         slug,
         status,
         file_name: storedName,
-        file_size_bytes: file.size
+        file_size_bytes: hasFile ? file.size : existing.file_size_bytes,
+        thumbnail_key: thumbnailKey
       }
-    }, 201);
+    }, existing ? 200 : 201);
   } catch (error) {
     console.error("Dataset upload failed:", error);
 
     try {
-      await env.DATASETS_BUCKET.delete(fileKey);
+      if (hasFile) await env.DATASETS_BUCKET.delete(fileKey);
+      if (uploadedThumbnailKey) await env.DATASETS_BUCKET.delete(uploadedThumbnailKey);
     } catch (cleanupError) {
-      console.error("Dataset file cleanup failed:", cleanupError);
+      console.error("Dataset upload cleanup failed:", cleanupError);
     }
 
     if (String(error?.message || "").toLowerCase().includes("unique")) {
@@ -340,4 +346,111 @@ export async function onRequestPost({ request, env, data }) {
 
     return json({ success: false, message: "The dataset could not be saved. Please try again." }, 503);
   }
+}
+
+
+export async function onRequestDelete({ request, env, data }) {
+  if (!data?.admin?.email) {
+    return adminJson({ success: false, message: "Administrator authentication required." }, 401);
+  }
+  if (!env.REGISTRATIONS || !env.DATASETS_BUCKET) {
+    return adminJson({ success: false, message: "Dataset storage is not configured." }, 503);
+  }
+  if (!validAdminOrigin(request)) {
+    return adminJson({ success: false, message: "Request origin is not permitted." }, 403);
+  }
+
+  const input = await readDeletionRequest(request);
+  if (input.error) return input.error;
+
+  const { id, reason, confirmName } = input;
+  let dataset;
+
+  try {
+    dataset = await env.REGISTRATIONS.prepare(`
+      SELECT id, title, file_key, thumbnail_key
+      FROM datasets
+      WHERE id = ?
+      LIMIT 1
+    `).bind(id).first();
+  } catch (error) {
+    console.error("Dataset deletion lookup failed:", error);
+    return adminJson({ success: false, message: "Unable to verify the dataset before deletion." }, 503);
+  }
+
+  if (!dataset) {
+    return adminJson({ success: false, message: "Dataset not found. Refresh the records and try again." }, 404);
+  }
+  if (confirmName !== dataset.title) {
+    return adminJson({ success: false, message: "The confirmation title does not match this dataset." }, 409);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  let resourceDeleted = false;
+
+  try {
+    await writeResourceAudit(env.REGISTRATIONS, {
+      resourceType: "dataset",
+      resourceId: dataset.id,
+      resourceName: dataset.title,
+      action: "delete_requested",
+      reason,
+      adminEmail: data.admin.email
+    });
+
+    // Archive first so a storage or database failure cannot leave a publicly
+    // downloadable record pointing to a missing object.
+    await env.REGISTRATIONS.prepare(
+      "UPDATE datasets SET status = 'archived', updated_at = ? WHERE id = ?"
+    ).bind(now, id).run();
+
+    if (dataset.file_key) await env.DATASETS_BUCKET.delete(dataset.file_key);
+    if (dataset.thumbnail_key) await env.DATASETS_BUCKET.delete(dataset.thumbnail_key);
+
+    await env.REGISTRATIONS.prepare(
+      "DELETE FROM datasets WHERE id = ?"
+    ).bind(id).run();
+    resourceDeleted = true;
+
+    await writeResourceAudit(env.REGISTRATIONS, {
+      resourceType: "dataset",
+      resourceId: dataset.id,
+      resourceName: dataset.title,
+      action: "deleted",
+      reason,
+      adminEmail: data.admin.email
+    });
+
+    return adminJson({
+      success: true,
+      action: "deleted",
+      message: "Dataset and its stored file were deleted. The administrative audit record was preserved."
+    });
+  } catch (error) {
+    console.error("Dataset deletion failed:", error);
+    if (!resourceDeleted) {
+      try {
+        await writeResourceAudit(env.REGISTRATIONS, {
+          resourceType: "dataset",
+          resourceId: dataset.id,
+          resourceName: dataset.title,
+          action: "delete_failed",
+          reason,
+          adminEmail: data.admin.email
+        });
+      } catch (auditError) {
+        console.error("Dataset deletion failure audit could not be recorded:", auditError);
+      }
+    }
+    return adminJson({
+      success: false,
+      message: resourceDeleted
+        ? "The dataset record was deleted, but the final audit event could not be confirmed. Contact an administrator to reconcile the audit history."
+        : "Dataset deletion did not complete. The record has been kept archived for safety. Refresh and contact an administrator if it remains unavailable."
+    }, 503);
+  }
+}
+
+export async function onRequestPut(context) {
+  return onRequestPost(context);
 }

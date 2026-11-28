@@ -165,15 +165,15 @@ async function verifyAccessToken(token, env) {
     env.CLOUDFLARE_ACCESS_TEAM_DOMAIN
   );
 
-  const audience = String(
+  const audiences = String(
     env.CLOUDFLARE_ACCESS_AUD || ""
-  ).trim();
+  ).split(",").map(value => value.trim()).filter(Boolean);
 
   const adminEmail = String(
     env.ADMIN_EMAIL || ""
   ).trim().toLowerCase();
 
-  if (!audience || !adminEmail) {
+  if (audiences.length === 0 || !adminEmail) {
     throw new Error("INVALID_CONFIGURATION");
   }
 
@@ -264,12 +264,9 @@ async function verifyAccessToken(token, env) {
   if (
     !payload ||
     payload.iss !== teamDomain ||
-    !(
+    !audiences.some(audience =>
       payload.aud === audience ||
-      (
-        Array.isArray(payload.aud) &&
-        payload.aud.includes(audience)
-      )
+      (Array.isArray(payload.aud) && payload.aud.includes(audience))
     ) ||
     typeof payload.exp !== "number" ||
     !Number.isFinite(payload.exp) ||

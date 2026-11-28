@@ -29,9 +29,11 @@ export default function CompetitionManagement({ preview = false }) {
   const [competitions, setCompetitions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [uploading, setUploading] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState('');
   const [error, setError] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [slugTouched, setSlugTouched] = React.useState(false);
+  const [editingId, setEditingId] = React.useState('');
 
   const [form, setForm] = React.useState({
     title: '',
@@ -46,7 +48,8 @@ export default function CompetitionManagement({ preview = false }) {
     starts_at: '',
     ends_at: '',
     status: 'draft',
-    file: null
+    file: null,
+    thumbnail: null
   });
 
   const updateForm = (field, value) => {
@@ -105,6 +108,51 @@ export default function CompetitionManagement({ preview = false }) {
     loadData();
   }, [loadData]);
 
+  const handleDelete = async competition => {
+    if (preview || deletingId) return;
+
+    const confirmed = window.confirm(
+      `Remove "${competition.title}"? If participants or submissions exist, the system will archive it and preserve their records.`
+    );
+    if (!confirmed) return;
+
+    const reason = window.prompt(
+      'Enter the reason for deleting or archiving this competition (at least 10 characters):'
+    );
+    if (reason === null) return;
+    if (reason.trim().length < 10 || reason.trim().length > 1000) {
+      setError('The audit reason must contain between 10 and 1,000 characters.');
+      return;
+    }
+
+    setDeletingId(competition.id);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/admin/competitions', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: competition.id,
+          confirmName: competition.title,
+          reason: reason.trim()
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Competition removal failed.');
+      }
+      setMessage(result.message || 'Competition action completed.');
+      await loadData();
+    } catch (err) {
+      setError(err.message || 'Competition removal failed. Please refresh and try again.');
+    } finally {
+      setDeletingId('');
+    }
+  };
+
   const handleTitleChange = value => {
     setForm(current => ({
       ...current,
@@ -149,7 +197,7 @@ export default function CompetitionManagement({ preview = false }) {
     setError('');
     setMessage('');
 
-    if (!form.file) {
+    if (!form.file && !editingId) {
       setError('Please select a competition dataset or challenge package.');
       return;
     }
@@ -173,6 +221,15 @@ export default function CompetitionManagement({ preview = false }) {
       return;
     }
 
+    let editReason = '';
+    if (editingId) {
+      const current = competitions.find(item => item.id === editingId);
+      if (current && current.status !== 'draft') {
+        editReason = window.prompt('Enter the reason for editing this published competition (at least 10 characters):') || '';
+        if (editReason.trim().length < 10 || editReason.trim().length > 1000) { setError('A valid audit reason is required to edit a published competition.'); return; }
+      }
+    }
+
     const payload = new FormData();
 
     payload.append('title', form.title);
@@ -193,13 +250,16 @@ export default function CompetitionManagement({ preview = false }) {
     payload.append('starts_at', new Date(form.starts_at).toISOString());
     payload.append('ends_at', new Date(form.ends_at).toISOString());
     payload.append('status', form.status);
-    payload.append('file', form.file);
+    if (editingId) payload.append('id', editingId);
+    if (form.file) payload.append('file', form.file);
+    if (form.thumbnail) payload.append('thumbnail', form.thumbnail);
+    if (editReason) payload.append('reason', editReason.trim());
 
     setUploading(true);
 
     try {
       const response = await fetch('/api/admin/competitions', {
-        method: 'POST',
+        method: editingId ? 'PUT' : 'POST',
         credentials: 'same-origin',
         body: payload
       });
@@ -212,6 +272,7 @@ export default function CompetitionManagement({ preview = false }) {
 
       setMessage(result.message || 'Competition saved successfully.');
       setSlugTouched(false);
+      setEditingId('');
 
       setForm({
         title: '',
@@ -226,11 +287,14 @@ export default function CompetitionManagement({ preview = false }) {
         starts_at: '',
         ends_at: '',
         status: 'draft',
-        file: null
+        file: null,
+        thumbnail: null
       });
 
       const fileInput = document.getElementById('competition-upload-file');
+      const imageInput = document.getElementById('competition-thumbnail-file');
       if (fileInput) fileInput.value = '';
+      if (imageInput) imageInput.value = '';
 
       await loadData();
     } catch (err) {
@@ -238,6 +302,40 @@ export default function CompetitionManagement({ preview = false }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const toDateTimeLocal = value => {
+    if (!value) return '';
+    const date = new Date(Number(value) * 1000);
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
+  const editCompetition = competition => {
+    setEditingId(competition.id);
+    setSlugTouched(true);
+    setError('');
+    setMessage(`Editing: ${competition.title}`);
+    setForm({
+      title: competition.title || '', slug: competition.slug || '', description: competition.description || '',
+      industry_id: competition.industry_id || '', difficulty: competition.difficulty || 'Beginner',
+      instructions: competition.instructions || '', record_count: String(competition.record_count ?? ''),
+      registration_opens_at: toDateTimeLocal(competition.registration_opens_at),
+      registration_closes_at: toDateTimeLocal(competition.registration_closes_at),
+      starts_at: toDateTimeLocal(competition.starts_at), ends_at: toDateTimeLocal(competition.ends_at),
+      status: competition.status === 'draft' ? 'draft' : 'published', file: null, thumbnail: null
+    });
+    document.getElementById('competition-upload-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId('');
+    setSlugTouched(false);
+    setForm(current => ({ ...current, title: '', slug: '', description: '', instructions: '', record_count: '', registration_opens_at: '', registration_closes_at: '', starts_at: '', ends_at: '', status: 'draft', file: null, thumbnail: null }));
+    const fileInput = document.getElementById('competition-upload-file');
+    const imageInput = document.getElementById('competition-thumbnail-file');
+    if (fileInput) fileInput.value = '';
+    if (imageInput) imageInput.value = '';
   };
 
   return (
@@ -264,9 +362,9 @@ export default function CompetitionManagement({ preview = false }) {
       {message && <div className="competition-alert competition-alert-success" role="status">{message}</div>}
 
       <div className="competition-admin-grid">
-        <form className="competition-upload-panel" onSubmit={handleSubmit}>
+        <form id="competition-upload-panel" className="competition-upload-panel" onSubmit={handleSubmit}>
           <fieldset disabled={preview || uploading} className="competition-form-fieldset">
-            <h3>Create a competition</h3>
+            <h3>{editingId ? 'Edit competition' : 'Create a competition'}</h3>
             <p className="competition-form-intro">
               Add the challenge information, schedule and dataset package.
             </p>
@@ -395,8 +493,12 @@ export default function CompetitionManagement({ preview = false }) {
               onChange={event => updateForm('status', event.target.value)}
             >
               <option value="draft">Save as draft</option>
-              <option value="upcoming">Publish as upcoming</option>
+              <option value="published">Publish now or schedule</option>
             </select>
+
+            <label htmlFor="competition-thumbnail-file">Competition thumbnail image</label>
+            <input id="competition-thumbnail-file" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => updateForm('thumbnail', event.target.files?.[0] || null)} />
+            <small>Optional. PNG, JPG or WEBP, maximum 5 MB.</small>
 
             <label htmlFor="competition-upload-file">Challenge dataset / package</label>
             <input
@@ -404,7 +506,7 @@ export default function CompetitionManagement({ preview = false }) {
               type="file"
               accept=".csv,.xlsx,.xls,.zip,.json,.parquet"
               onChange={handleFileChange}
-              required
+              required={!editingId}
             />
             <small>
               Maximum size: 50 MB. ZIP is recommended for a dataset with a data dictionary, README or supporting files.
@@ -422,12 +524,9 @@ export default function CompetitionManagement({ preview = false }) {
               type="submit"
               disabled={uploading}
             >
-              {uploading
-                ? 'Uploading competition...'
-                : form.status === 'upcoming'
-                  ? 'Upload and publish competition'
-                  : 'Upload and save draft'}
+              {uploading ? 'Saving competition...' : editingId ? (form.status === 'published' ? 'Update and publish competition' : 'Update draft') : form.status === 'published' ? 'Upload and publish competition' : 'Upload and save draft'}
             </button>
+            {editingId && <button type="button" className="competition-refresh-button" onClick={cancelEdit}>Cancel editing</button>}
           </fieldset>
         </form>
 
@@ -452,13 +551,25 @@ export default function CompetitionManagement({ preview = false }) {
               {competitions.map(competition => (
                 <article className="competition-record-card" key={competition.id}>
                   <div className="competition-record-top">
-                    <h4>{competition.title}</h4>
-                    <span className={`competition-status competition-status-${competition.status}`}>
-                      {competition.status}
-                    </span>
+                    <div className="competition-record-title">
+                      <h4>{competition.title}</h4>
+                      <span className={`competition-status competition-status-${competition.status}`}>
+                        {competition.status}
+                      </span>
+                    </div>
+                    <button type="button" className="competition-refresh-button" onClick={() => editCompetition(competition)} disabled={preview || Boolean(deletingId)}>Edit</button>
+                    <button
+                      type="button"
+                      className="competition-delete-button"
+                      onClick={() => handleDelete(competition)}
+                      disabled={preview || Boolean(deletingId)}
+                    >
+                      {deletingId === competition.id ? 'Processing...' : 'Delete / archive'}
+                    </button>
                   </div>
 
                   <p className="competition-record-description">{competition.description}</p>
+                  {competition.thumbnail_key && <small>Thumbnail image uploaded</small>}
 
                   <div className="competition-record-meta">
                     <span><strong>Industry:</strong> {competition.industry_name || 'General'}</span>

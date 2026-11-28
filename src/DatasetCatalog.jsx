@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Database, Download, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Search, Database, Download, ChevronLeft, ChevronRight, Filter, CheckCircle2, ArrowLeft } from 'lucide-react';
 import './dataset-hub.css';
 
 const difficulties = ['All Levels', 'Beginner', 'Intermediate', 'Professional'];
@@ -80,6 +80,16 @@ export default function DatasetCatalog() {
 
   return (
     <main className="dataset-page">
+      <header className="dataset-hub-header">
+        <a href="/" className="dataset-hub-brand"><img src="/celerity-logo.png" alt="Celerity Networks" /><span><strong>Celerity Networks Ltd</strong><small>TECHNOLOGY · TRAINING · SOLUTIONS</small></span></a>
+        <nav className="celerity-page-nav" aria-label="Main navigation">
+          <a href="/">Home</a>
+          <a href="/what-we-do">What We Do</a>
+          <a href="/datasets" aria-current="page">Datasets</a>
+          <a href="/competitions">Competitions</a>
+          <a href="/about">About Us</a>
+        </nav>
+      </header>
       <section className="dataset-hero">
         <div className="dataset-hero-inner">
           <span className="dataset-eyebrow">CELERITY NETWORKS RESOURCE HUB</span>
@@ -168,16 +178,19 @@ export default function DatasetCatalog() {
             <div className="dataset-grid">
               {datasets.map(item => (
                 <article className="dataset-card" key={item.id || item.slug}>
+                  <div className="dataset-card-image">
+                    {item.thumbnail_url ? <img src={item.thumbnail_url} alt={`${item.title} dataset thumbnail`} loading="lazy" /> : <div className="dataset-card-image-placeholder"><Database size={38} /><span>CELERITY DATASET</span></div>}
+                    <span className="dataset-image-level">{item.difficulty || 'Beginner'}</span>
+                  </div>
+                  <div className="dataset-card-body">
                   <div className="dataset-card-top">
                     <span className="dataset-industry">{item.industry_name || item.industry || 'General'}</span>
-                    <span className={`dataset-level level-${String(item.difficulty || 'beginner').toLowerCase()}`}>
-                      {item.difficulty || 'Beginner'}
-                    </span>
                   </div>
                   <h3>{item.title}</h3>
                   <p className="dataset-description">
                     {item.description || 'A practical dataset for developing data analysis skills.'}
                   </p>
+                  {Array.isArray(item.learning_objectives) && item.learning_objectives.length > 0 && <div className="dataset-objectives"><strong>What you will practise</strong><ul>{item.learning_objectives.slice(0, 3).map((objective, index) => <li key={`${item.id}-objective-${index}`}><CheckCircle2 size={15} />{objective}</li>)}</ul></div>}
                   <div className="dataset-meta">
                     <span>{formatRecords(item.record_count)}</span>
                     <span>{item.file_format || item.format || 'Dataset'}</span>
@@ -192,6 +205,7 @@ export default function DatasetCatalog() {
                     >
                       <Download size={16} /> Download
                     </a>
+                  </div>
                   </div>
                 </article>
               ))}

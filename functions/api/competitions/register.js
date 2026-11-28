@@ -228,7 +228,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     const competition = await env.REGISTRATIONS.prepare(`
-      SELECT id, title, status, registration_opens_at, registration_closes_at
+      SELECT id, title, status, starts_at, ends_at, registration_opens_at, registration_closes_at
       FROM competitions
       WHERE slug = ?
       LIMIT 1
@@ -249,6 +249,10 @@ export async function onRequestPost({ request, env }) {
       return json({
         error: 'Registration has not opened yet.'
       }, 403);
+    }
+
+    if (competition.ends_at != null && now > competition.ends_at) {
+      return json({ error: 'Registration for this competition has closed.' }, 403);
     }
 
     if (
@@ -303,19 +307,34 @@ export async function onRequestPost({ request, env }) {
     } else {
       const participantId = crypto.randomUUID();
 
-      await env.REGISTRATIONS.prepare(`
+      const participantInsert = await env.REGISTRATIONS.prepare(`
         INSERT INTO competition_participants (
           id, competition_id, full_name, email, phone, organization
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        SELECT ?, ?, ?, ?, ?, ?
+        WHERE EXISTS (
+          SELECT 1
+          FROM competitions
+          WHERE id = ?
+            AND status IN ('upcoming', 'active')
+        )
       `).bind(
         participantId,
         competition.id,
         fullName,
         email,
         phone,
-        organization
+        organization,
+        competition.id
       ).run();
+
+      // The status check and insert are one SQL statement. This prevents a
+      // registration that raced with an administrator archiving the challenge.
+      if (participantInsert.meta?.changes !== 1) {
+        return json({
+          error: 'This competition is no longer open for registration.'
+        }, 409);
+      }
 
       participant = {
         id: participantId,

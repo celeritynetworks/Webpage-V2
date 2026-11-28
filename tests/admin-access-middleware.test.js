@@ -89,7 +89,8 @@ async function invoke(
   middleware,
   token,
   team = TEAM_A,
-  nextHandler = async () => new Response('accepted', { status: 200 })
+  nextHandler = async () => new Response('accepted', { status: 200 }),
+  audience = AUDIENCE
 ) {
   const headers = {};
 
@@ -103,7 +104,7 @@ async function invoke(
     }),
     env: {
       CLOUDFLARE_ACCESS_TEAM_DOMAIN: team,
-      CLOUDFLARE_ACCESS_AUD: AUDIENCE,
+      CLOUDFLARE_ACCESS_AUD: audience,
       ADMIN_EMAIL
     },
     data: {},
@@ -139,6 +140,14 @@ test('accepts a valid Cloudflare Access administrator token', async t => {
   assert.equal(result.response.status, 200);
   assert.equal(result.admin.email, ADMIN_EMAIL);
   assert.equal(result.admin.subject, 'test-admin');
+});
+
+test('accepts a token from either configured admin path audience', async t => {
+  const keyPair = await createKeyPair();
+  const middleware = await loadMiddleware(t, async () => jwksResponse(keyPair.jwk));
+  const token = await createToken(keyPair, { aud: 'admin-api-audience' });
+  const result = await invoke(middleware, token, TEAM_A, undefined, `${AUDIENCE},admin-api-audience`);
+  assert.equal(result.response.status, 200);
 });
 
 test('rejects a request without an Access token', async t => {
