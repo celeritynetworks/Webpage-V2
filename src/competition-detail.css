@@ -1,0 +1,148 @@
+/* Individual competition detail page. Namespaced to avoid global course-page styles. */
+.competition-detail-page { min-height: 100vh; color: #183653; background: #f7faff; }
+.competition-detail-header { min-height: 82px; padding: 13px max(5.5vw, 24px); display: flex; align-items: center; justify-content: space-between; gap: 28px; background: #fff; border-bottom: 1px solid #e5edf7; }
+.competition-detail-header nav { display: flex; align-items: center; gap: 27px; }
+.competition-detail-header nav .competition-detail-nav-cta { color: #fff; }
+.competition-detail-hero { padding: 45px max(7vw, 28px) 54px; color: #fff; background: linear-gradient(120deg, #0b2b50, #10558c 65%, #087bc3); }
+.competition-detail-hero-inner { width: min(1080px, 100%); margin: 0 auto; }
+.competition-detail-back { display: inline-flex; align-items: center; gap: 8px; color: #c5e1f6; font-size: 12px; font-weight: 700; text-decoration: none; }
+.competition-detail-back:hover { color: #fff; }
+.competition-detail-hero-top { margin-top: 36px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+.competition-detail-kicker,
+.competition-detail-section-label { color: #8fc9f2; font-size: 10px; font-weight: 850; letter-spacing: .14em; }
+.competition-detail-status { color: #fff; background: rgba(255,255,255,.15); }
+.competition-detail-status.status-active { color: #c8ffe2; background: rgba(36,190,120,.19); }
+.competition-detail-status.status-upcoming { color: #ffe9b0; background: rgba(240,179,51,.19); }
+.competition-detail-status.status-completed { color: #e0eaf5; background: rgba(255,255,255,.13); }
+.competition-detail-hero h1 { max-width: 850px; margin: 18px 0 12px; color: #fff; font-size: clamp(34px, 4.8vw, 55px); line-height: 1.1; letter-spacing: -.04em; }
+.competition-detail-hero-inner > p { max-width: 780px; margin: 0; color: #d0e4f5; font-size: 15px; line-height: 1.8; }
+.competition-detail-tags { margin-top: 19px; display: flex; flex-wrap: wrap; gap: 9px; }
+.competition-detail-tags span { padding: 7px 11px; color: #d5eaff; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); border-radius: 99px; font-size: 10px; font-weight: 700; }
+.competition-detail-hero-meta { margin-top: 31px; padding: 20px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; border-top: 1px solid rgba(255,255,255,.17); border-bottom: 1px solid rgba(255,255,255,.17); }
+.competition-detail-hero-meta > div { display: flex; align-items: center; gap: 12px; min-width: 0; color: #8fd0ff; }
+.competition-detail-hero-meta span { min-width: 0; display: grid; gap: 5px; }
+.competition-detail-hero-meta small { color: #a9c9e3; font-size: 10px; }
+.competition-detail-hero-meta strong { overflow-wrap: anywhere; color: #fff; font-size: 12px; }
+.competition-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.competition-detail-actions .competition-detail-button { margin-top: 20px; color: #12365a; background: #fff; }
+.competition-detail-actions .competition-detail-button:hover { background: #e6f4ff; }
+.competition-detail-login { margin-top: 20px; color: #d3e9fa; font-size: 12px; font-weight: 700; text-decoration: none; }
+.competition-detail-login:hover { color: #fff; text-decoration: underline; }
+.competition-detail-completed-note { margin-top: 20px; color: #d4e6f5; font-size: 12px; }
+.competition-detail-main { width: min(1080px, calc(100% - 48px)); margin: 0 auto; padding: 58px 0 75px; }
+.competition-detail-columns { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .8fr); align-items: start; gap: 27px; }
+.competition-detail-brief,
+.competition-detail-info-card,
+.competition-detail-support-card,
+.competition-detail-board-card,
+.competition-detail-winner { background: #fff; border: 1px solid #e2ebf4; border-radius: 10px; box-shadow: 0 8px 25px rgba(27,62,98,.04); }
+.competition-detail-brief { padding: 30px; }
+.competition-detail-section-label { color: #1680c8; }
+.competition-detail-brief h2,
+.competition-detail-results-heading h2 { margin: 10px 0 13px; color: #18395d; font-size: 27px; line-height: 1.2; letter-spacing: -.03em; }
+.competition-detail-brief > p { margin: 0; color: #6d8096; font-size: 13px; line-height: 1.85; }
+.competition-detail-instructions { margin-top: 29px; padding-top: 24px; border-top: 1px solid #eaf0f6; }
+.competition-detail-instructions h3,
+.competition-detail-info-card h3 { margin: 0 0 11px; color: #254462; font-size: 16px; }
+.competition-detail-instructions p { margin: 0; color: #6d8096; font-size: 12px; line-height: 1.85; }
+.competition-detail-preserve-lines { white-space: pre-line; }
+.competition-detail-dataset { margin-top: 27px; padding: 18px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 20px; align-items: start; gap: 13px; background: #f2f8fe; border: 1px solid #dfedfa; border-radius: 8px; }
+.competition-detail-dataset-icon { width: 40px; height: 40px; display: grid; place-items: center; color: #0876d1; background: #fff; border-radius: 9px; }
+.competition-detail-dataset > svg { color: #9ab0c5; }
+.competition-detail-dataset h3 { margin: 1px 0 5px; color: #244766; font-size: 14px; }
+.competition-detail-dataset p { margin: 0; color: #526d87; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.competition-detail-dataset small { display: block; margin-top: 5px; color: #8094a9; font-size: 10px; }
+.competition-detail-dataset .competition-detail-access-note { margin-top: 12px; padding-top: 11px; color: #6c8197; border-top: 1px solid #dce9f5; font-size: 10px; line-height: 1.7; }
+.competition-detail-register-callout { margin-top: 30px; padding-top: 23px; display: flex; align-items: center; justify-content: space-between; gap: 17px; border-top: 1px solid #eaf0f6; }
+.competition-detail-register-callout h3 { margin: 8px 0 5px; color: #254462; font-size: 17px; }
+.competition-detail-register-callout p { margin: 0; color: #71849a; font-size: 11px; line-height: 1.7; }
+.competition-detail-register-callout .competition-detail-button { flex: 0 0 auto; margin: 0; }
+.competition-detail-sidebar { display: grid; gap: 17px; }
+.competition-detail-info-card { padding: 24px; }
+.competition-detail-info-card h3 { margin-top: 9px; }
+.competition-detail-info-card dl { margin: 19px 0 0; }
+.competition-detail-info-card dl > div { padding: 11px 0; display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #edf1f6; }
+.competition-detail-info-card dt { color: #8091a4; font-size: 10px; }
+.competition-detail-info-card dd { margin: 0; color: #35536f; font-size: 10px; font-weight: 750; text-align: right; }
+.competition-detail-button-full { width: 100%; margin-top: 19px; }
+.competition-detail-sidebar-login { display: block; margin-top: 13px; color: #0876d1; font-size: 11px; font-weight: 750; text-align: center; text-decoration: none; }
+.competition-detail-support-card { padding: 21px; background: #f0f7fd; }
+.competition-detail-support-card h3 { margin: 0 0 8px; color: #254462; font-size: 15px; }
+.competition-detail-support-card p { margin: 0; color: #71849a; font-size: 11px; line-height: 1.7; }
+.competition-detail-support-card a { margin-top: 13px; display: inline-flex; align-items: center; gap: 7px; color: #0876d1; font-size: 11px; font-weight: 800; text-decoration: none; }
+.competition-detail-results { margin-top: 61px; }
+.competition-detail-results-heading { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.competition-detail-results-heading h2 { margin-bottom: 5px; }
+.competition-detail-results-heading p { margin: 0; color: #77899d; font-size: 12px; }
+.competition-detail-results-heading > svg { color: #1680c8; }
+.competition-detail-results-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, .75fr); gap: 20px; }
+.competition-detail-board-card { overflow: hidden; }
+.competition-detail-board-title { padding: 20px 22px; display: flex; align-items: center; gap: 12px; color: #1380ce; border-bottom: 1px solid #eaf0f6; }
+.competition-detail-board-title h3 { margin: 0 0 4px; color: #244462; font-size: 14px; }
+.competition-detail-board-title p { margin: 0; color: #8798aa; font-size: 10px; }
+.competition-detail-table-wrap { overflow-x: auto; }
+.competition-detail-table-wrap table { width: 100%; border-collapse: collapse; }
+.competition-detail-table-wrap th { padding: 12px 15px; color: #8192a5; background: #f8fafd; font-size: 9px; text-align: left; text-transform: uppercase; letter-spacing: .07em; }
+.competition-detail-table-wrap td { padding: 13px 15px; color: #536b83; border-top: 1px solid #edf1f6; font-size: 11px; }
+.competition-detail-rank { width: 24px; height: 24px; display: inline-grid; place-items: center; color: #678097; background: #f0f4f8; border-radius: 50%; font-size: 10px; font-weight: 800; }
+.competition-detail-rank.rank-1 { color: #94630b; background: #fff0c6; }
+.competition-detail-rank.rank-2 { color: #5b6b7b; background: #e8edf2; }
+.competition-detail-rank.rank-3 { color: #98643d; background: #f8e8dc; }
+.competition-detail-person { display: flex; align-items: center; gap: 9px; }
+.competition-detail-avatar,
+.competition-detail-winner-avatar { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; color: #0876d1; background: #e8f4ff; border-radius: 50%; font-size: 10px; font-weight: 850; }
+.competition-detail-person strong { color: #34536f; font-size: 10px; }
+.competition-detail-profile-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.competition-detail-profile-links a { display: inline-flex; align-items: center; gap: 3px; color: #0876d1; font-size: 9px; text-decoration: none; }
+.competition-detail-score { font-weight: 800; }
+.competition-detail-board-empty { min-height: 185px; padding: 30px; display: grid; align-content: center; justify-items: center; gap: 10px; color: #9aafc2; text-align: center; }
+.competition-detail-board-empty p { max-width: 310px; margin: 0; color: #7d8fa2; font-size: 11px; line-height: 1.7; }
+.competition-detail-winner { padding: 22px; text-align: center; }
+.competition-detail-winner-heading { display: flex; align-items: center; justify-content: center; gap: 8px; color: #b78220; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+.competition-detail-winner-avatar { width: 58px; height: 58px; margin: 24px auto 11px; font-size: 17px; }
+.competition-detail-winner h3 { margin: 0; color: #294966; font-size: 17px; }
+.competition-detail-winner-label { display: block; margin-top: 5px; color: #8999a9; font-size: 10px; }
+.competition-detail-winner-score { display: block; margin-top: 18px; color: #176fae; font-size: 26px; }
+.competition-detail-winner > small { color: #8b9bad; font-size: 9px; }
+.competition-detail-winner > p { margin: 14px 0; color: #6d8197; font-size: 11px; line-height: 1.7; }
+.competition-detail-winner .competition-detail-profile-links { justify-content: center; }
+.competition-detail-winner-empty { padding: 30px 0 10px; color: #b0c2d2; }
+.competition-detail-winner-empty h3 { margin: 12px 0 7px; font-size: 15px; }
+.competition-detail-winner-empty p { margin: 0; color: #7e91a5; font-size: 11px; line-height: 1.7; }
+.competition-detail-board-state { padding: 25px; display: flex; justify-content: center; gap: 9px; color: #6c8197; background: #fff; border: 1px solid #e2ebf4; border-radius: 9px; }
+.competition-detail-error { color: #a33b3b; font-size: 12px; }
+.competition-detail-state { min-height: 55vh; padding: 55px 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #6f8499; text-align: center; }
+.competition-detail-state h1 { margin: 0; color: #193a5d; font-size: 26px; }
+.competition-detail-state p { max-width: 500px; margin: 0; font-size: 13px; line-height: 1.7; }
+.competition-detail-state .competition-detail-button { margin-top: 10px; }
+.competition-detail-footer { margin-top: 0; }
+@media (max-width: 850px) {
+  .competition-detail-columns { grid-template-columns: 1fr; }
+  .competition-detail-sidebar { grid-template-columns: 1fr 1fr; align-items: start; }
+  .competition-detail-results-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  .competition-detail-header { min-height: 72px; padding: 10px 17px; }
+  .competition-detail-header nav { gap: 13px; }
+  .competition-detail-header nav a { font-size: 10px; }
+  .competition-detail-header nav a:nth-child(1),
+  .competition-detail-header nav a:nth-child(2) { display: none; }
+  .competition-detail-brand img { width: 43px; height: 43px; }
+  .competition-detail-brand strong { font-size: 13px; }
+  .competition-detail-brand small { font-size: 9px; }
+  .competition-detail-hero { padding: 33px 22px 39px; }
+  .competition-detail-hero-top { margin-top: 27px; align-items: flex-start; }
+  .competition-detail-hero h1 { font-size: 35px; }
+  .competition-detail-hero-inner > p { font-size: 13px; }
+  .competition-detail-hero-meta { grid-template-columns: 1fr; gap: 15px; }
+  .competition-detail-main { width: calc(100% - 32px); padding: 36px 0 50px; }
+  .competition-detail-brief { padding: 21px; }
+  .competition-detail-register-callout { align-items: flex-start; flex-direction: column; }
+  .competition-detail-sidebar { grid-template-columns: 1fr; }
+  .competition-detail-results { margin-top: 43px; }
+  .competition-detail-results-heading h2 { font-size: 24px; }
+  .competition-detail-table-wrap th,
+  .competition-detail-table-wrap td { padding: 11px 9px; }
+}
+
+.competition-detail-thumbnail{display:block;width:100%;max-height:340px;object-fit:cover;border-radius:18px;margin:22px 0 28px;border:1px solid rgba(255,255,255,.22);box-shadow:0 18px 44px rgba(5,31,57,.18)}

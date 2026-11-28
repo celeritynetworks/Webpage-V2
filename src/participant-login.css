@@ -1,0 +1,171 @@
+
+.participant-login-main {
+  width: min(1160px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 35px 0 75px;
+}
+
+.participant-login-layout {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: 65px;
+  align-items: center;
+  margin-top: 35px;
+}
+
+.participant-login-intro h1 {
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1.12;
+  margin: 18px 0;
+  color: #102b50;
+}
+
+.participant-login-intro h1 em {
+  color: #2584d8;
+  font-style: normal;
+}
+
+.participant-login-intro > p {
+  max-width: 520px;
+  color: #63758b;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.participant-login-benefits {
+  display: grid;
+  gap: 17px;
+  margin-top: 32px;
+}
+
+.participant-login-benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #294866;
+  font-size: 15px;
+}
+
+.participant-login-benefits svg {
+  color: #2584d8;
+  flex-shrink: 0;
+}
+
+.participant-login-card {
+  background: #fff;
+  border: 1px solid #e3edf7;
+  border-radius: 18px;
+  padding: 34px;
+  box-shadow: 0 15px 45px rgba(30, 75, 120, 0.09);
+}
+
+.participant-login-card form {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant-login-card form label {
+  margin: 17px 0 8px;
+  color: #29435f;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.participant-login-card form input {
+  width: 100%;
+  min-height: 49px;
+  padding: 12px 14px;
+  border: 1px solid #d6e2ef;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #18324f;
+  font: inherit;
+  outline: none;
+}
+
+.participant-login-card form input:focus {
+  border-color: #2584d8;
+  box-shadow: 0 0 0 3px rgba(37, 132, 216, 0.1);
+}
+
+.participant-login-card form button {
+  width: 100%;
+  min-height: 51px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 8px;
+  background: #1678c8;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.participant-login-card form button:hover:not(:disabled) {
+  background: #1068b1;
+}
+
+.participant-login-card form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.participant-login-actions {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.participant-login-register {
+  border-top: 1px solid #e8eef5;
+  margin-top: 25px;
+  padding-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  color: #687b90;
+  font-size: 14px;
+}
+
+.participant-login-register a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #1678c8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.participant-login-register a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+  .participant-login-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .participant-login-intro h1 {
+    font-size: 40px;
+  }
+
+  .participant-login-card {
+    padding: 25px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .participant-login-main {
+    width: min(100% - 28px, 1160px);
+    padding-top: 22px;
+  }
+
+  .participant-login-intro h1 {
+    font-size: 34px;
+  }
+}
